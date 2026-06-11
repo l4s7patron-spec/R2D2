@@ -1,26 +1,29 @@
 import telebot
 import os
+import sys
 from google import genai
 from google.genai import types
 import threading
 from flask import Flask
 
-# Створюємо веб-сервер для Render
+# Примусово змушуємо систему працювати з UTF-8 (лікує помилку з кирилицею)
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
+
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Bot is running live!"
 
-# ТВОЇ ТОКЕНИ (Встав сюди свій новий API ключ Gemini)
+# ТВОЇ ТОКЕНИ (Встав сюди свій робочий API ключ)
 TELEGRAM_TOKEN = "8764341900:AAHX6d8BcDy9DQxkNv_Px94BKlOpCP-Ne90"
-NEW_GEMINI_KEY = "СЮДИ_ВСТАВ_СВІЙ_НОВИЙ_КЛЮЧ_З_AI_STUDIO"
+NEW_GEMINI_KEY = "СЮДИ_ВСТАВ_СВІЙ_НОВИЙ_КЛЮЧ_ЯКИЙ_ТИ_ЩОЙНО_ЗРОБИВ"
 
-# Примусово записуємо ключ в систему, щоб бібліотека його точно побачила
 os.environ["GEMINI_API_KEY"] = NEW_GEMINI_KEY
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-ai = genai.Client()  # Тепер клієнт залізно підтягне ключ з системи
+ai = genai.Client()
 
 # Повне відключення цензури Google
 no_censorship = [
@@ -43,9 +46,12 @@ system_instruction = (
 def reply(message):
     bot.send_chat_action(message.chat.id, 'typing')
     try:
+        # Явно кодуємо та декодуємо текст, щоб уникнути ascii помилок
+        user_text = message.text.encode('utf-8').decode('utf-8')
+        
         res = ai.models.generate_content(
             model='gemini-2.5-flash',
-            contents=message.text,
+            contents=user_text,
             config=types.GenerateContentConfig(
                 safety_settings=no_censorship,
                 system_instruction=system_instruction
