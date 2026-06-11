@@ -18,7 +18,7 @@ def home():
 
 # ТВОЇ ТОКЕНИ (Встав сюди свій робочий API ключ)
 TELEGRAM_TOKEN = "8764341900:AAHX6d8BcDy9DQxkNv_Px94BKlOpCP-Ne90"
-NEW_GEMINI_KEY = "СЮДИ_ВСТАВ_СВІЙ_НОВИЙ_КЛЮЧ_ЯКИЙ_ТИ_ЩОЙНО_ЗРОБИВ"
+NEW_GEMINI_KEY = "AQ.Ab8RN6LazTLWwANRAiqXQtWoakFwO3MS5b1qqAI1Eh6xadHN1Q"
 
 os.environ["GEMINI_API_KEY"] = NEW_GEMINI_KEY
 
