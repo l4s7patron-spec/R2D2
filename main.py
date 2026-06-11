@@ -1,22 +1,26 @@
 import telebot
+import os
 from google import genai
 from google.genai import types
 import threading
 from flask import Flask
 
-# Створюємо міні-веб-сервер для забаганок Render
-app = Flask(__name__)
+# Створюємо веб-сервер для Render
+app = Flask(name)
 
 @app.route('/')
 def home():
     return "Bot is running live!"
 
-# Твої токени
+# ТВОЇ ТОКЕНИ (Встав сюди свій новий API ключ Gemini)
 TELEGRAM_TOKEN = "8764341900:AAHX6d8BcDy9DQxkNv_Px94BKlOpCP-Ne90"
-GEMINI_API_KEY = "AQ.Ab8RN6LTMWyunE5BGK9qNcu3jSPG-qzPKnv_5suJWLnAQVLSXQ"
+NEW_GEMINI_KEY = "СЮДИ_ВСТАВ_СВІЙ_НОВИЙ_КЛЮЧ_З_AI_STUDIO"
+
+# Примусово записуємо ключ в систему, щоб бібліотека його точно побачила
+os.environ["GEMINI_API_KEY"] = NEW_GEMINI_KEY
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-ai = genai.Client(api_key=GEMINI_API_KEY)
+ai = genai.Client()  # Тепер клієнт залізно підтягне ключ з системи
 
 # Повне відключення цензури Google
 no_censorship = [
@@ -54,8 +58,6 @@ def reply(message):
 def run_bot():
     bot.infinity_polling()
 
-if __name__ == '__main__':
-    # Запуск бота в окремому потоці
+if name == 'main':
     threading.Thread(target=run_bot, daemon=True).start()
-    # Запуск веб-сервера на порту 10000 для Render
     app.run(host='0.0.0.0', port=10000)
