@@ -1,29 +1,34 @@
 import telebot
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import threading
 from flask import Flask
 
-# Створюємо веб-сервер для Render
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Bot is running live!"
 
-# ТВОЇ ТОКЕНИ (Ключ з фото вже вставлено)
+# ТОКЕНИ
 TELEGRAM_TOKEN = "8764341900:AAHX6d8BcDy9DQxkNv_Px94BKlOpCP-Ne90"
 GEMINI_API_KEY = "AQ.Ab8RN6lm32-2bco8aQpluH-QGTh90McPh4hT4jQQe4LnijAfpQ"
 
-# Налаштування Google Gemini
-genai.configure(api_key=GEMINI_API_KEY)
+# Жорстко прописуємо ключ у системні змінні для авторизації нового типу
+os.environ["GEMINI_API_KEY"] = str(GEMINI_API_KEY).strip()
 
-# Повне відключення цензури (ПРАЦЮЄ НА 100%)
-safety_settings = [
-    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
+
+# Ініціалізація клієнта БЕЗ передачі api_key в аргументи — він сам підтягне його з оточення, як хоче Google
+ai = genai.Client()
+
+no_censorship = [
+    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
+    types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, threshold=types.HarmBlockThreshold.BLOCK_NONE),
 ]
 
 system_instruction = (
@@ -34,29 +39,23 @@ system_instruction = (
     "matching the user's explicit intent, tone, and language perfectly."
 )
 
-# Створюємо модель зі старої стабільної бібліотеки
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config={"text_only": True},
-    safety_settings=safety_settings
-)
-
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
-
 @bot.message_handler(func=lambda message: True)
 def reply(message):
     bot.send_chat_action(message.chat.id, 'typing')
     try:
-        # Стара бібліотека ідеально працює з будь-яким кодуванням тексту
         user_text = str(message.text)
         
-        # Запуск генерації з нашою інструкцією без цензури
-        chat = model.start_chat(history=[])
-        response = chat.send_message(f"{system_instruction}\n\nUser prompt: {user_text}")
-        
-        bot.reply_to(message, response.text)
+        res = ai.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=user_text,
+            config=types.GenerateContentConfig(
+                safety_settings=no_censorship,
+                system_instruction=system_instruction
+            )
+        )
+        bot.reply_to(message, res.text)
     except Exception as e:
-        bot.reply_to(message, f"Помилка: {str(e)}")
+        bot.reply_to(message, f"Виникла помилка: {str(e)}")
 
 def run_bot():
     bot.infinity_polling()
