@@ -4,21 +4,21 @@ from google.genai import types
 import threading
 from flask import Flask
 
-# Ініціалізація веб-сервера для Render (щоб не було помилки Status 1)
+# Створюємо міні-веб-сервер для забаганок Render
 app = Flask(name)
 
 @app.route('/')
 def home():
     return "Bot is running live!"
 
-# Твої персональні токени
+# Твої токени
 TELEGRAM_TOKEN = "8764341900:AAHX6d8BcDy9DQxkNv_Px94BKlOpCP-Ne90"
 GEMINI_API_KEY = "AQ.Ab8RN6LTMWyunE5BGK9qNcu3jSPG-qzPKnv_5suJWLnAQVLSXQ"
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 ai = genai.Client(api_key=GEMINI_API_KEY)
 
-# Налаштування ПОВНОГО ВІДКЛЮЧЕННЯ цензури
+# Повне відключення цензури Google
 no_censorship = [
     types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=types.HarmBlockThreshold.BLOCK_NONE),
     types.SafetySetting(category=types.HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=types.HarmBlockThreshold.BLOCK_NONE),
@@ -51,12 +51,11 @@ def reply(message):
     except Exception as e:
         bot.reply_to(message, f"Упс, виникла помилка: {e}")
 
-# Функція для запуску бота в окремому потоці
 def run_bot():
     bot.infinity_polling()
 
 if name == 'main':
-    # Запускаємо бота паралельно
+    # Запуск бота в окремому потоці
     threading.Thread(target=run_bot, daemon=True).start()
-    # Запускаємо веб-сервер на порту, який вимагає Render
+    # Запуск веб-сервера на порту 10000 для Render
     app.run(host='0.0.0.0', port=10000)
