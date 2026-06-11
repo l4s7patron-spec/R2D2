@@ -6,7 +6,7 @@ import threading
 from flask import Flask
 
 # Створюємо веб-сервер для Render
-app = Flask(name)
+app = Flask(__name__)
 
 @app.route('/')
 def home():
@@ -58,6 +58,6 @@ def reply(message):
 def run_bot():
     bot.infinity_polling()
 
-if name == 'main':
+if __name__ == '__main__':
     threading.Thread(target=run_bot, daemon=True).start()
     app.run(host='0.0.0.0', port=10000)
